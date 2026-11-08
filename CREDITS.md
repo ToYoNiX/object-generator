@@ -15,11 +15,17 @@ by hand-tuning numbers.
 - License: declared MIT in the project's `package.json` and `README.md`
 - Carried over: nothing.
 
-## Ergogen (inspiration)
+## Ergogen (engine)
 
-The keyboard generator whose YAML-first approach to shapes and outlines this app follows.
+The keyboard generator behind the Ergogen engine (points, outlines, cases, KiCad PCBs). Used
+as a library through the owner's fork <https://github.com/ToYoNiX/ergogen-cli>, which keeps
+the same license.
 
 - Project: <https://github.com/ergogen/ergogen>
 - Author: Bán Dénes and contributors
 - License: MIT, Copyright (c) 2018 Bán Dénes
-- Carried over: nothing.
+
+## Example configs
+
+- **Sblit36** by ToYoNiX: `engines/ergogen/examples/sblit36.ts` is a copy of `config.yaml` from
+  <https://github.com/ToYoNiX/sblit36> (MIT, Copyright (c) 2026 Assem Mohamed).

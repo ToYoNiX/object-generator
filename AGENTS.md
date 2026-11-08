@@ -91,8 +91,8 @@ npm run kit:update   # pull the newest compatible @toyonix/web-kit
   source of truth; a ready-made shape palette and a drawing-program-style canvas (select, move,
   resize, round all or single corners, right-click menu) edit that YAML for you.
 - **Users:** the owner first; anyone who finds hand-tuning shape numbers in YAML slow.
-- **Data:** everything runs in the browser. Persist state only through `storage.app` from the
-  kit. No backend, no external API yet.
+- **Data:** everything runs in the browser. No backend, no external API yet. See "Storage"
+  below.
 - **Key decisions:**
   - Inspired by Ergogen GUI (<https://github.com/ergogen/ergogen-gui>), but written from
     scratch. Anything ever ported from another project must be credited in `CREDITS.md` and in
@@ -100,3 +100,42 @@ npm run kit:update   # pull the newest compatible @toyonix/web-kit
   - Canvas edits must preserve the user's YAML comments and formatting: edit the YAML document
     in place, never re-dump it.
 - **Status:** beta (keep in sync with package.json).
+
+### Engines
+
+The app is engine-agnostic. An engine turns a YAML config into files; the editor, previews and
+canvas only use the `Engine` interface in `engines/types.ts`, so engines for things other than
+keyboards can be added later.
+
+- `engines/types.ts`: `Engine`, `EngineResult` (never thrown, failures are `ok: false`),
+  `EngineFile` (`path` like `outlines/board_edge.svg`, `kind` picks the preview).
+- `engines/worker-runner.ts`: turns a Web Worker into `run(config)`. Creates the worker lazily
+  (never during prerendering), matches replies by id, replaces a crashed worker.
+- `engines/ergogen/`: the first engine. `run.ts` calls Ergogen and flattens its results
+  (tested in Node), `worker.ts` is the worker entry, `index.ts` exports `ergogenEngine`,
+  `examples/` holds bundled configs (only the owner's Sblit36).
+- **The Ergogen dependency** is the owner's fork, installed from a **commit tarball**
+  (`https://codeload.github.com/ToYoNiX/ergogen-cli/tar.gz/<sha>`), not a `github:` URL. A git
+  URL makes npm clone the fork and install all its dev tools, which takes minutes and times
+  out. To pick up fork changes, `npm install ergogen@<tarball URL of the new sha>`. Fork
+  changes this app needs (per-shape placement data, per-corner radii) go to
+  `ToYoNiX/ergogen-cli` first.
+
+### Storage
+
+All toyonix apps share the `toyonix.github.io` origin, so they share browser storage and its
+~5 MB localStorage quota.
+
+- Small app state (the current YAML draft, settings) goes in `storage.app` (keys become
+  `toyonix:object-generator:<key>`). Validate what `get()` returns. `set()` returns `false`
+  when storage is full or disabled: tell the user, never drop their work silently.
+- Never store generated files (SVG, DXF, PCB, STL): they're regenerated from the config.
+- Larger data (many projects, custom footprints) belongs in IndexedDB named with `dbName()`.
+  The kit has no IndexedDB helper yet; add one to `@toyonix/web-kit` rather than here.
+- Never store secrets (e.g. a GitHub token): every toyonix app can read this storage.
+
+### Tests
+
+`npm test` runs Vitest (Node). `npm run check` runs it too, but the shared CI workflow
+(`site-ci.yml` in web-kit) doesn't run tests yet, so run `npm run check` before pushing.
+Tests follow Arrange / Act / Assert.
