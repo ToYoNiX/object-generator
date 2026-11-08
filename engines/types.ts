@@ -30,6 +30,9 @@ export interface Engine {
   id: string;
   label: string;
   examples: EngineExample[];
-  /** Runs the engine off the main thread. Never rejects: failures come back as `ok: false`. */
-  run(config: string): Promise<EngineResult>;
+  /**
+   * Runs the engine off the main thread. Never rejects: failures come back as `ok: false`.
+   * A plain function (not a method), so it can be passed around on its own.
+   */
+  run: (config: string) => Promise<EngineResult>;
 }

@@ -134,8 +134,35 @@ All toyonix apps share the `toyonix.github.io` origin, so they share browser sto
   The kit has no IndexedDB helper yet; add one to `@toyonix/web-kit` rather than here.
 - Never store secrets (e.g. a GitHub token): every toyonix app can read this storage.
 
+### Editor logic
+
+Tested building blocks; the UI composes them.
+
+- `hooks/use-draft.ts` + `lib/draft.ts`: the draft (`{ engine, config }`) in `storage.app`
+  under `draft`. Saved when typing pauses and on `pagehide`/hidden; reports refused saves.
+- `hooks/use-generation.ts`: debounced engine runs, `runNow`, newest run wins, last good
+  files kept on error.
+- `lib/svg.ts`: `prepareSvg` rebuilds engine SVG from an allowlist before it's inlined (the
+  only HTML injection in the app; keep it that way) and draws strokes in `currentColor`.
+- `lib/files.ts`, `lib/download.ts`: file selection/grouping, single download, zip of all.
+- `lib/text-diff.ts`: `minimalChange` for updating the editor without losing cursor/undo.
+  Any programmatic edit of the YAML (examples now, the canvas later) goes through it.
+- `components/YamlEditor.tsx`: CodeMirror 6 YAML editor themed with kit tokens,
+  Ctrl/Cmd+Enter runs.
+- `components/Workbench.tsx`: **a temporary, deliberately plain page** wiring all of the
+  above together. It is not the design; the real workspace layout replaces it.
+
 ### Tests
 
-`npm test` runs Vitest (Node). `npm run check` runs it too, but the shared CI workflow
+`npm test` runs Vitest. Pure logic runs in Node; files that need a DOM start with
+`// @vitest-environment jsdom`. `npm run check` runs the tests too, but the shared CI workflow
 (`site-ci.yml` in web-kit) doesn't run tests yet, so run `npm run check` before pushing.
 Tests follow Arrange / Act / Assert.
+
+The kit's lint rules are strict about promises in tests: give sync `act()` callbacks a block
+body (`act(() => { … })`, no `await`), and `await act(async () => …)` only for async work.
+
+To check the real static export in a browser: `npm run build`, copy `out/` to
+`<dir>/object-generator/`, serve `<dir>` with any static server, and open
+`/object-generator/`. A 404 for `/registry.json` is expected locally (the root site serves
+it on Pages).
