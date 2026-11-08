@@ -32,7 +32,7 @@
     "@codemirror/state": "^6.7.6",
     "@codemirror/view": "^6.43.15",
     "@lezer/highlight": "^1.2.5",
-    "@toyonix/web-kit": "^0.1.5",
+    "@toyonix/web-kit": "^0.1.6",
     "codemirror": "^6.0.2",
     "ergogen": "https://codeload.github.com/ToYoNiX/ergogen-cli/tar.gz/ef5988debc19b7cea1729a8d4fa4949d9c9fd29d",
     "jszip": "^3.10.2",
