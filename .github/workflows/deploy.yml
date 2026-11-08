@@ -1,0 +1,19 @@
+# Deploys this site to GitHub Pages. The steps live in web-kit, so fixes reach every site
+# without editing this file. Keep the file name: web-kit's sync-sites dispatches deploy.yml.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    # The web-starter template itself is never deployed; repos created from it are.
+    if: ${{ !github.event.repository.is_template }}
+    uses: ToYoNiX/web-kit/.github/workflows/site-deploy.yml@v0

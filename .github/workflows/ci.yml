@@ -1,0 +1,13 @@
+# Format, lint, typecheck, and build on every PR, against the newest compatible web-kit.
+name: ci
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: ToYoNiX/web-kit/.github/workflows/site-ci.yml@v0

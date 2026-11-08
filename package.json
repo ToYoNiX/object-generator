@@ -1,0 +1,43 @@
+{
+  "name": "object-generator",
+  "private": true,
+  "type": "module",
+  "toyonix": {
+    "title": "Object Generator",
+    "description": "Design objects from YAML and shape them with the mouse: a ready-made shape palette and a canvas where every move, resize, and rounded corner is written back to the config.",
+    "nav": true,
+    "order": 50,
+    "status": "beta"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "preview": "npx --yes serve out",
+    "lint": "eslint .",
+    "typecheck": "next typegen && tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run build",
+    "kit:update": "npm update @toyonix/web-kit",
+    "setup": "bash scripts/setup-repo.sh"
+  },
+  "dependencies": {
+    "@toyonix/web-kit": "^0.1.0",
+    "next": "^16.4.2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^9.39.5",
+    "prettier": "^3.9.10",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~6.0.3"
+  }
+}

@@ -1,0 +1,4 @@
+@import "tailwindcss";
+@import "@toyonix/web-kit/tailwind.css";
+
+/* Site-specific styles go below. Use the kit's tokens (var(--tx-…) or bg-surface, text-accent-text, …), never raw colors. */
