@@ -44,6 +44,11 @@ export interface PlacedPart {
 export interface OutlineShapes {
   /** The size of the outline's SVG drawing (its viewBox), in the same units. */
   size: { width: number; height: number };
+  /**
+   * The drawing's top-left corner in the engine's coordinates, which have y pointing up: a point
+   * (x, y) is drawn at (x - origin.x, origin.y - y).
+   */
+  origin: { x: number; y: number };
   parts: PlacedPart[];
 }
 

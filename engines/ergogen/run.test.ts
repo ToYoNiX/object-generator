@@ -42,6 +42,8 @@ describe("runErgogen", () => {
     // board_edge's one rectangle fills its whole SVG (viewBox 0 0 119 100).
     const board = result.shapes.board_edge;
     expect(board?.size).toEqual({ width: 119, height: 100 });
+    // Its drawing's top-left corner, in Ergogen's coordinates (y up): x of the left edge, y of the top.
+    expect(board?.origin).toEqual({ x: 150.19, y: -97.585 });
     expect(board?.parts[0]?.placements[0]?.path).toBe("M 0 100 L 119 100 L 119 0 L 0 0 L 0 100 Z");
   });
 

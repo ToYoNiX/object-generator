@@ -181,6 +181,13 @@ Two routes, each with its own `AppShell` in a route-group layout (the root layou
   on the home page and link to `/workspace/?example=<id>`; "New" is `/workspace/?new` or the
   toolbar button (`lib/intent.ts`). Replacing a draft that holds the user's own changes asks
   first and offers to download it (`isReplaceable` in `lib/draft.ts`).
+- **The canvas** (`components/OutlineCanvas.tsx`, kit `Canvas`): an outline's SVG opens on it
+  instead of the flat preview. The engine's drawing is shown in ink and each part's placements
+  are click targets (`.og-part`, hover in the second accent); the selected part is
+  `tx-canvas__selected`. The right panel ("Controls") has Layers (the outline's parts in
+  order, `TreeList`, reorder writes the YAML with `movePart`) and Files. Tools: V select, H pan,
+  Escape clears the selection. Canvas edits go through `editConfig`, which leaves invalid YAML
+  untouched.
 - Panel shortcuts are Ctrl/Cmd+B (YAML) and Ctrl/Cmd+Alt+B (files). Not Ctrl+[ (CodeMirror's
   outdent) and not Alt+number (switches tabs in Firefox). On screens under 760px the panels
   open over the preview, so only one is open at a time.

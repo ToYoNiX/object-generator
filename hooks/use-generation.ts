@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { EngineFile, EngineResult } from "@/engines/types";
+import type { EngineFile, EngineResult, OutlineShapes } from "@/engines/types";
 
 export interface GenerationState {
   /** Files from the last successful run. Kept while a later run fails, so the preview stays. */
   files: EngineFile[];
+  /** Where each outline's parts are, from the same run as `files` (kept on failure too). */
+  shapes: Record<string, OutlineShapes>;
   /** Error of the latest run, or null if it succeeded. */
   error: string | null;
   /** True while the latest run is in progress. */
@@ -24,6 +26,7 @@ export function useGeneration(
   delayMs = 500,
 ): GenerationState {
   const [files, setFiles] = useState<EngineFile[]>([]);
+  const [shapes, setShapes] = useState<Record<string, OutlineShapes>>({});
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const latestRun = useRef(0);
@@ -40,6 +43,7 @@ export function useGeneration(
       setRunning(false);
       if (result.ok) {
         setFiles(result.files);
+        setShapes(result.shapes);
         setError(null);
       } else {
         setError(result.error);
@@ -59,5 +63,5 @@ export function useGeneration(
     if (latestConfig.current !== null) void start(latestConfig.current);
   }, [start]);
 
-  return { files, error, running, runNow };
+  return { files, shapes, error, running, runNow };
 }

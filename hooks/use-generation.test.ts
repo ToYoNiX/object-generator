@@ -25,10 +25,14 @@ function controllableEngine() {
   return { run, runs, finish };
 }
 
+const SHAPES = {
+  board: { size: { width: 10, height: 5 }, origin: { x: 0, y: 5 }, parts: [] },
+};
+
 const ok = (path: string): EngineResult => ({
   ok: true,
   files: [{ path, kind: "svg", content: "<svg/>" }],
-  shapes: {},
+  shapes: path.includes("good") ? SHAPES : {},
   log: [],
 });
 const failed = (error: string): EngineResult => ({ ok: false, error, log: [] });
@@ -120,7 +124,7 @@ describe("useGeneration", () => {
     expect(result.current.running).toBe(false);
   });
 
-  it("keeps the last good files on screen when a run fails, and shows the error", async () => {
+  it("keeps the last good files and shapes on screen when a run fails, and shows the error", async () => {
     // Arrange
     const engine = controllableEngine();
     const { result, rerender } = renderHook(({ config }) => useGeneration(engine.run, config, 500), {
@@ -140,6 +144,7 @@ describe("useGeneration", () => {
 
     // Assert
     expect(result.current.files.map((file) => file.path)).toEqual(["outlines/good.svg"]);
+    expect(result.current.shapes).toBe(SHAPES);
     expect(result.current.error).toBe('Field "points" is missing');
   });
 

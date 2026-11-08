@@ -35,6 +35,7 @@ function toShapes(results: Results): Record<string, OutlineShapes> {
       size: extents
         ? { width: round(extents.high[0] - extents.low[0]), height: round(extents.high[1] - extents.low[1]) }
         : { width: 0, height: 0 },
+      origin: extents ? { x: round(extents.low[0]), y: round(extents.high[1]) } : { x: 0, y: 0 },
       parts: outline.parts,
     };
   }
