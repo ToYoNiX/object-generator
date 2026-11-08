@@ -154,6 +154,15 @@ Tested building blocks; the UI composes them.
   Any programmatic edit of the YAML (examples now, the canvas later) goes through it.
 - `components/YamlEditor.tsx`: CodeMirror 6 YAML editor with the kit's `toyonixTheme`
   (`@toyonix/web-kit/codemirror`), Ctrl/Cmd+Enter runs.
+- `lib/yaml-edit.ts`: edits that keep the user's file as written (the `yaml` package).
+  `setScalar` changes an existing value by replacing only its characters in the source;
+  `updateDocument` makes structural changes through the document model (keeps comments, may
+  normalize what it re-prints). Both throw on YAML that doesn't parse, rather than overwrite it.
+- `engines/ergogen/edits.ts`: canvas edits in Ergogen terms: `moveShape` (`adjust.shift`, in
+  the placement point's rotated/mirrored frame), `resizeShape` (`size`, or `radius` for
+  circles), `setCornerRadius` (`corner`), `addPart`, `deletePart`, `movePart` (order matters:
+  it decides what's added or cut first). Formulas are kept and get an offset (`kx - 1` plus 2
+  is `kx + 1`). Distances are Ergogen's (mm, y up).
 - `lib/panels.ts` + `hooks/use-panels.ts`: which side panels are open, in `storage.app` under
   `panels`.
 
