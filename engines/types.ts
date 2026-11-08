@@ -16,8 +16,46 @@ export interface EngineFile {
   content: string;
 }
 
+/** One place a part was drawn (a part can be placed many times, e.g. once per key). */
+export interface Placement {
+  /** The named point it's placed on, or null. */
+  point: string | null;
+  /** Position and rotation (degrees) in the engine's own coordinates. */
+  x: number;
+  y: number;
+  r: number;
+  mirrored: boolean;
+  /** The part's outline as SVG path data, in the coordinates of its outline's SVG file. */
+  path: string;
+}
+
+/** A part of an outline, as written in the config. */
+export interface PlacedPart {
+  /** Its key in the config: the index ("0", "1", …) for a list of parts, or its name. */
+  name: string;
+  /** What kind of shape, e.g. "rectangle", "circle", "outline". */
+  what: string;
+  /** How it combines with the parts before it: "add", "subtract", "intersect" or "stack". */
+  operation: string;
+  placements: Placement[];
+}
+
+/** Where the parts of one outline are, for the canvas. */
+export interface OutlineShapes {
+  /** The size of the outline's SVG drawing (its viewBox), in the same units. */
+  size: { width: number; height: number };
+  parts: PlacedPart[];
+}
+
 export type EngineResult =
-  { ok: true; files: EngineFile[]; log: string[] } | { ok: false; error: string; log: string[] };
+  | {
+      ok: true;
+      files: EngineFile[];
+      /** Per outline name: its parts and where they are. Empty for engines that can't say. */
+      shapes: Record<string, OutlineShapes>;
+      log: string[];
+    }
+  | { ok: false; error: string; log: string[] };
 
 export interface EngineExample {
   /** Used in links: /workspace/?example=<id>. */

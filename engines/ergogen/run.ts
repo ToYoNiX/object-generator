@@ -1,5 +1,5 @@
 import ergogen from "ergogen";
-import type { EngineFile, EngineResult } from "../types";
+import type { EngineFile, EngineResult, OutlineShapes } from "../types";
 
 /**
  * Runs Ergogen on a YAML config and flattens its nested results into a list of files.
@@ -11,15 +11,35 @@ export async function runErgogen(config: string): Promise<EngineResult> {
   const log: string[] = [];
   try {
     // debug: also produce the points demo and "_"-prefixed helper outlines, which are useful
-    // while designing. svg: produce SVG next to DXF so outlines can be previewed.
-    const results = await ergogen.process(config, { debug: true, svg: true }, (message) => log.push(message));
-    return { ok: true, files: toFiles(results), log };
+    // while designing. svg: produce SVG next to DXF so outlines can be previewed. shapes: where
+    // each outline part is placed, for the canvas (an option of the ToYoNiX/ergogen-cli fork).
+    const results = await ergogen.process(config, { debug: true, svg: true, shapes: true }, (message) =>
+      log.push(message),
+    );
+    return { ok: true, files: toFiles(results), shapes: toShapes(results), log };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : String(error), log };
   }
 }
 
 type Results = Awaited<ReturnType<typeof ergogen.process>>;
+
+/** The fork reports each outline's extents; the canvas needs the size of its SVG drawing. */
+function toShapes(results: Results): Record<string, OutlineShapes> {
+  const shapes: Record<string, OutlineShapes> = {};
+  for (const [name, outline] of Object.entries(results.shapes ?? {})) {
+    const extents = outline.extents;
+    // Rounded like the SVG's viewBox (makerjs writes 3 decimals).
+    const round = (value: number) => Math.round(value * 1000) / 1000;
+    shapes[name] = {
+      size: extents
+        ? { width: round(extents.high[0] - extents.low[0]), height: round(extents.high[1] - extents.low[1]) }
+        : { width: 0, height: 0 },
+      parts: outline.parts,
+    };
+  }
+  return shapes;
+}
 
 function toFiles(results: Results): EngineFile[] {
   const files: EngineFile[] = [];

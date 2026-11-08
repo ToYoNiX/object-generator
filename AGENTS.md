@@ -108,7 +108,10 @@ canvas only use the `Engine` interface in `engines/types.ts`, so engines for thi
 keyboards can be added later.
 
 - `engines/types.ts`: `Engine`, `EngineResult` (never thrown, failures are `ok: false`),
-  `EngineFile` (`path` like `outlines/board_edge.svg`, `kind` picks the preview).
+  `EngineFile` (`path` like `outlines/board_edge.svg`, `kind` picks the preview), and
+  `shapes`: per outline, the size of its SVG drawing and its parts in config order, each with
+  its placements (point, x, y, r, mirrored, and `path`: the part's outline in the coordinates
+  of that outline's SVG, so the canvas can draw selections over it).
 - `engines/worker-runner.ts`: turns a Web Worker into `run(config)`. Creates the worker lazily
   (never during prerendering), matches replies by id, replaces a crashed worker.
 - `engines/ergogen/`: the first engine. `run.ts` calls Ergogen and flattens its results
@@ -120,6 +123,8 @@ keyboards can be added later.
   out. To pick up fork changes, `npm install ergogen@<tarball URL of the new sha>`. Fork
   changes this app needs (per-shape placement data, per-corner radii) go to
   `ToYoNiX/ergogen-cli` first.
+- The `shapes` option comes from fork PR ToYoNiX/ergogen-cli#4. Until it's merged, the app is
+  pinned to that PR's commit (`ef5988d`); once it's on `develop`, pin the merged commit.
 
 ### Storage
 

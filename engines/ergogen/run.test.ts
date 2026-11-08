@@ -21,6 +21,30 @@ describe("runErgogen", () => {
     expect(board?.content).toContain("<svg");
   });
 
+  it("reports where each part of each outline is placed, lined up with its SVG", async () => {
+    // Arrange
+    const config = sblit36.config;
+
+    // Act
+    const result = await runErgogen(config);
+
+    // Assert
+    if (!result.ok) throw new Error(result.error);
+    const plate = result.shapes.switch_plate;
+    expect(plate?.parts.map((part) => [part.name, part.what, part.operation])).toEqual([
+      ["0", "outline", "add"],
+      ["1", "outline", "subtract"],
+      ["2", "outline", "stack"],
+    ]);
+    const keycaps = result.shapes.key_keycaps?.parts[0]?.placements ?? [];
+    expect(keycaps).toHaveLength(18);
+    expect(keycaps[0]?.point).toBe("matrix_pinky_top");
+    // board_edge's one rectangle fills its whole SVG (viewBox 0 0 119 100).
+    const board = result.shapes.board_edge;
+    expect(board?.size).toEqual({ width: 119, height: 100 });
+    expect(board?.parts[0]?.placements[0]?.path).toBe("M 0 100 L 119 100 L 119 0 L 0 0 L 0 100 Z");
+  });
+
   it("returns the error instead of throwing when the config is invalid", async () => {
     // Arrange
     const config = "units:\n  kx: 19\n";

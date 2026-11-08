@@ -28,6 +28,7 @@ function controllableEngine() {
 const ok = (path: string): EngineResult => ({
   ok: true,
   files: [{ path, kind: "svg", content: "<svg/>" }],
+  shapes: {},
   log: [],
 });
 const failed = (error: string): EngineResult => ({ ok: false, error, log: [] });
