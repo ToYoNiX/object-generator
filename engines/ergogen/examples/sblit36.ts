@@ -8,6 +8,7 @@ export const sblit36: EngineExample = {
   id: "sblit36",
   label: "Sblit36",
   author: "ToYoNiX",
+  description: "A 36-key split keyboard: outlines, plate and case layers, and a KiCad PCB.",
   config: `
 units:
   kx: u

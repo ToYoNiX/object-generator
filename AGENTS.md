@@ -147,10 +147,31 @@ Tested building blocks; the UI composes them.
 - `lib/files.ts`, `lib/download.ts`: file selection/grouping, single download, zip of all.
 - `lib/text-diff.ts`: `minimalChange` for updating the editor without losing cursor/undo.
   Any programmatic edit of the YAML (examples now, the canvas later) goes through it.
-- `components/YamlEditor.tsx`: CodeMirror 6 YAML editor themed with kit tokens,
-  Ctrl/Cmd+Enter runs.
-- `components/Workbench.tsx`: **a temporary, deliberately plain page** wiring all of the
-  above together. It is not the design; the real workspace layout replaces it.
+- `components/YamlEditor.tsx`: CodeMirror 6 YAML editor with the kit's `toyonixTheme`
+  (`@toyonix/web-kit/codemirror`), Ctrl/Cmd+Enter runs.
+- `lib/panels.ts` + `hooks/use-panels.ts`: which side panels are open, in `storage.app` under
+  `panels`.
+
+### Pages
+
+Two routes, each with its own `AppShell` in a route-group layout (the root layout has none):
+
+- `app/(home)/`: the home page, a normal page with the shared header.
+- `app/workspace/`: the working area, `<AppShell layout="app" header={false}>`: the whole
+  window, no shared header. `components/WorkspaceView.tsx` builds it from the kit's
+  `Workspace`, `Toolbar`, `SidePanel` and `StatusBar`: YAML on the left, the preview
+  (`Preview.tsx`) in the middle, the files (`FileList.tsx`) on the right. The canvas will take
+  the middle.
+- One local project for now (a single draft in `storage.app`; several projects wait for an
+  IndexedDB helper in the kit). A first visit starts from the engine's `starter`. Examples live
+  on the home page and link to `/workspace/?example=<id>`; "New" is `/workspace/?new` or the
+  toolbar button (`lib/intent.ts`). Replacing a draft that holds the user's own changes asks
+  first and offers to download it (`isReplaceable` in `lib/draft.ts`).
+- Panel shortcuts are Ctrl/Cmd+B (YAML) and Ctrl/Cmd+Alt+B (files). Not Ctrl+[ (CodeMirror's
+  outdent) and not Alt+number (switches tabs in Firefox). On screens under 760px the panels
+  open over the preview, so only one is open at a time.
+- Tool UI pieces that other apps could use belong in the kit, not here (see "Where code
+  belongs"); this app composes them.
 
 ### Tests
 

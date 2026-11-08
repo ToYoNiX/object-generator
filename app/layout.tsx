@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { AppShell, ThemeScript } from "@toyonix/web-kit/react";
-import { getRegistrySnapshot } from "@toyonix/web-kit/registry";
+import { ThemeScript } from "@toyonix/web-kit/react";
 import { site } from "@/site";
 import "./globals.css";
 
@@ -10,19 +9,15 @@ export const metadata: Metadata = {
   description: site.description,
 };
 
-export default async function RootLayout({ children }: { children: ReactNode }) {
-  // Fetched once at build time so the shared nav is in the static HTML.
-  const registry = await getRegistrySnapshot();
+// The AppShell lives in each route group's layout: (home) is a normal page with the shared
+// header, workspace/ is a full-window tool page without it.
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <ThemeScript />
       </head>
-      <body>
-        <AppShell registry={registry} appTitle={site.title}>
-          {children}
-        </AppShell>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

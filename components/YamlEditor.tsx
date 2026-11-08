@@ -1,9 +1,8 @@
 "use client";
 
 import { yaml } from "@codemirror/lang-yaml";
-import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { EditorView, keymap } from "@codemirror/view";
-import { tags } from "@lezer/highlight";
+import { toyonixTheme } from "@toyonix/web-kit/codemirror";
 import { basicSetup } from "codemirror";
 import { useEffect, useRef } from "react";
 import { minimalChange } from "@/lib/text-diff";
@@ -16,39 +15,6 @@ interface YamlEditorProps {
   "aria-label": string;
   className?: string;
 }
-
-/** Editor colors and fonts from the kit's tokens, so the editor follows the toyonix theme. */
-const theme = EditorView.theme({
-  "&": {
-    height: "100%",
-    color: "var(--tx-code-text)",
-    backgroundColor: "var(--tx-code-bg)",
-    fontSize: "0.875rem",
-  },
-  "&.cm-focused": { outline: "2px solid var(--tx-ring)" },
-  ".cm-scroller": { fontFamily: "var(--tx-font-mono)" },
-  ".cm-content": { caretColor: "var(--tx-accent)" },
-  ".cm-cursor, .cm-dropCursor": { borderLeftColor: "var(--tx-accent)" },
-  ".cm-gutters": {
-    color: "var(--tx-text-muted)",
-    backgroundColor: "var(--tx-code-bg)",
-    borderRight: "var(--tx-border-width) solid var(--tx-border)",
-  },
-  ".cm-activeLine, .cm-activeLineGutter": {
-    backgroundColor: "color-mix(in srgb, var(--tx-accent) 8%, transparent)",
-  },
-  "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection": {
-    backgroundColor: "color-mix(in srgb, var(--tx-accent) 25%, transparent)",
-  },
-});
-
-const highlighting = HighlightStyle.define([
-  { tag: [tags.propertyName, tags.definition(tags.propertyName)], color: "var(--tx-code-key)" },
-  { tag: [tags.string, tags.content], color: "var(--tx-code-string)" },
-  { tag: [tags.number, tags.bool, tags.null], color: "var(--tx-accent-text)" },
-  { tag: tags.comment, color: "var(--tx-text-muted)", fontStyle: "italic" },
-  { tag: [tags.meta, tags.punctuation, tags.separator], color: "var(--tx-text-muted)" },
-]);
 
 /**
  * A CodeMirror 6 YAML editor. The editor owns the text while you type; when `value` changes
@@ -81,8 +47,8 @@ export function YamlEditor({ value, onChange, onRun, "aria-label": ariaLabel, cl
         ]),
         basicSetup,
         yaml(),
-        syntaxHighlighting(highlighting),
-        theme,
+        // Colors, fonts and syntax colors from the kit's tokens, so the editor follows the theme.
+        toyonixTheme,
         EditorView.contentAttributes.of({ "aria-label": ariaLabel }),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) callbacks.current.onChange(update.state.doc.toString());

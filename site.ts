@@ -7,4 +7,6 @@ import pkg from "./package.json";
 export const site = {
   title: pkg.toyonix.title,
   description: pkg.toyonix.description,
+  /** Whether this app has a link in the shared header ("nav" in package.json; false here). */
+  nav: pkg.toyonix.nav !== false,
 };

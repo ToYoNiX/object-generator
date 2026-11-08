@@ -18,3 +18,11 @@ export function parseDraft(value: unknown): Draft | undefined {
   if (typeof config !== "string") return undefined;
   return { engine, config };
 }
+
+/**
+ * Whether the draft can be replaced without asking: it's empty, or exactly one of the configs
+ * the app ships (the starter or an example), so nothing the user wrote would be lost.
+ */
+export function isReplaceable(config: string, shipped: readonly string[]): boolean {
+  return config.trim() === "" || shipped.includes(config);
+}

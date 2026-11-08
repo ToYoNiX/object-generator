@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseDraft } from "./draft";
+import { isReplaceable, parseDraft } from "./draft";
 
 describe("parseDraft", () => {
   it("accepts a stored draft with an engine and a config", () => {
@@ -47,5 +47,32 @@ describe("parseDraft", () => {
 
     // Assert
     expect(draft).toEqual({ engine: "ergogen", config: "a: 1" });
+  });
+});
+
+describe("isReplaceable", () => {
+  const shipped = ["points: {} # starter", "points: {} # example"];
+
+  it.each([
+    ["an empty draft", "  \n"],
+    ["the untouched starter", "points: {} # starter"],
+    ["an untouched example", "points: {} # example"],
+  ])("replaces %s without asking", (_label, config) => {
+    // Act
+    const replaceable = isReplaceable(config, shipped);
+
+    // Assert
+    expect(replaceable).toBe(true);
+  });
+
+  it("asks before replacing the user's own changes", () => {
+    // Arrange
+    const config = "points: {} # starter, then edited";
+
+    // Act
+    const replaceable = isReplaceable(config, shipped);
+
+    // Assert
+    expect(replaceable).toBe(false);
   });
 });

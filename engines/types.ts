@@ -20,15 +20,20 @@ export type EngineResult =
   { ok: true; files: EngineFile[]; log: string[] } | { ok: false; error: string; log: string[] };
 
 export interface EngineExample {
+  /** Used in links: /workspace/?example=<id>. */
   id: string;
   label: string;
   author: string;
+  /** One line for the example's card on the home page. */
+  description?: string;
   config: string;
 }
 
 export interface Engine {
   id: string;
   label: string;
+  /** The config a new object starts from (also the draft on a first visit). */
+  starter: string;
   examples: EngineExample[];
   /**
    * Runs the engine off the main thread. Never rejects: failures come back as `ok: false`.
