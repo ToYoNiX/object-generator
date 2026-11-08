@@ -5,7 +5,7 @@
   "toyonix": {
     "title": "Object Generator",
     "description": "Design objects from YAML and shape them with the mouse: a ready-made shape palette and a canvas where every move, resize, and rounded corner is written back to the config.",
-    "nav": true,
+    "nav": false,
     "order": 50,
     "status": "beta"
   },
