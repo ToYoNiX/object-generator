@@ -27,9 +27,18 @@
   stroke-width: 6px;
   vector-effect: non-scaling-stroke;
   cursor: pointer;
+  /* Browsers don't hit-test a fully transparent fill: count the whole shape anyway. */
+  pointer-events: all;
 }
 
-.og-part:hover {
+/* Hovering any copy of a part (one per point it's placed on) outlines all of them. */
+.og-part-group:hover > .og-part {
   stroke: var(--tx-accent-2);
   stroke-width: 3px;
+}
+
+/* The selected part's lines in the YAML editor: an accent tint with a bar, like a selection. */
+.cm-editor .og-yaml-highlight {
+  background: color-mix(in srgb, var(--tx-accent) 22%, transparent);
+  box-shadow: inset 3px 0 0 var(--tx-accent);
 }

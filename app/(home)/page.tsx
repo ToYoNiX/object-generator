@@ -44,11 +44,11 @@ export default function Home() {
       <section className="pt-24 pb-16">
         <Eyebrow>beta · keyboards first</Eyebrow>
         <Display className="max-w-[16ch]">
-          Design objects from <em>YAML</em>.
+          Make <em>objects</em> in your browser.
         </Display>
         <Lead>
-          Write a config, or start from an example, and get every file it makes: outlines, PCBs and cases.
-          Soon you&apos;ll shape it with the mouse too.
+          Shape them with the mouse or write their config, then download the real files: outlines, PCBs and
+          cases, ready to cut, order or print.
         </Lead>
         <ButtonRow>
           <Button asChild>
@@ -106,10 +106,6 @@ export default function Home() {
             </Card>
           ))}
         </CardGrid>
-        <p className="mt-8 text-text-muted">
-          Coming next: a canvas where you shape the outline with the mouse (move, resize, round corners) and
-          the config updates itself.
-        </p>
       </Section>
     </Container>
   );

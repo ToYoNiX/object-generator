@@ -33,6 +33,7 @@ const ok = (path: string): EngineResult => ({
   ok: true,
   files: [{ path, kind: "svg", content: "<svg/>" }],
   shapes: path.includes("good") ? SHAPES : {},
+  references: [],
   log: [],
 });
 const failed = (error: string): EngineResult => ({ ok: false, error, log: [] });
@@ -145,6 +146,7 @@ describe("useGeneration", () => {
     // Assert
     expect(result.current.files.map((file) => file.path)).toEqual(["outlines/good.svg"]);
     expect(result.current.shapes).toBe(SHAPES);
+    expect(result.current.references).toEqual([]);
     expect(result.current.error).toBe('Field "points" is missing');
   });
 
@@ -168,5 +170,68 @@ describe("useGeneration", () => {
 
     // Assert
     expect(result.current.error).toBeNull();
+  });
+});
+
+describe("useGeneration revision", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it("counts finished runs, failed ones too, so the canvas knows the drawing is current", async () => {
+    // Arrange
+    const engine = controllableEngine();
+    const { result, rerender } = renderHook(({ config }) => useGeneration(engine.run, config, 500), {
+      initialProps: { config: "good" },
+    });
+    const before = result.current.revision;
+
+    // Act
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    await engine.finish(0, ok("outlines/good.svg"));
+    const afterSuccess = result.current.revision;
+    rerender({ config: "broken" });
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    await engine.finish(1, failed("bad"));
+
+    // Assert
+    expect(before).toBe(0);
+    expect(afterSuccess).toBe(1);
+    expect(result.current.revision).toBe(2);
+  });
+});
+
+describe("useGeneration accept", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it("takes a result already made for a config, without running the engine again for it", async () => {
+    // Arrange
+    const engine = controllableEngine();
+    const { result, rerender } = renderHook(({ config }) => useGeneration(engine.run, config, 500), {
+      initialProps: { config: "before" },
+    });
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    await engine.finish(0, ok("outlines/before.svg"));
+
+    // Act: an edit was checked by running the engine on "after"; that result is handed over
+    act(() => {
+      result.current.accept("after", ok("outlines/good-after.svg"));
+    });
+    rerender({ config: "after" });
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    // Assert
+    expect(result.current.files.map((file) => file.path)).toEqual(["outlines/good-after.svg"]);
+    expect(result.current.shapes).toBe(SHAPES);
+    expect(result.current.revision).toBe(2);
+    expect(engine.run).toHaveBeenCalledTimes(1);
   });
 });

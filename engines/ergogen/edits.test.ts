@@ -78,14 +78,6 @@ describe("resizeShape", () => {
     // Assert
     expect(edited).toContain("size: [kx, ky]");
   });
-
-  it("resizes a circle through its radius", () => {
-    // Act
-    const edited = resizeShape(CONFIG, { outline: "holes", part: "left" }, { width: 1, height: 1 });
-
-    // Assert: the diameter grew by 1
-    expect(readValue(edited, ["outlines", "holes", "left", "radius"])).toBe(2.1);
-  });
 });
 
 describe("setCornerRadius", () => {
@@ -113,10 +105,11 @@ describe("setCornerRadius", () => {
 describe("parts", () => {
   it("adds a part at the end of an outline", () => {
     // Act
-    const edited = addPart(CONFIG, "board", { what: "circle", radius: 3 });
+    const added = addPart(CONFIG, "board", { what: "circle", radius: 3 });
 
-    // Assert
-    expect(readValue(edited, ["outlines", "board", 2])).toEqual({ what: "circle", radius: 3 });
+    // Assert: it tells the new part's name, so the canvas can select it
+    expect(added.part).toBe("2");
+    expect(readValue(added.config, ["outlines", "board", 2])).toEqual({ what: "circle", radius: 3 });
   });
 
   it("adds a part to a named outline under a new name, and creates a missing outline", () => {
@@ -125,8 +118,10 @@ describe("parts", () => {
     const created = addPart(CONFIG, "logo", { what: "rectangle", size: [5, 5] });
 
     // Assert
-    expect(readValue(named, ["outlines", "holes", "circle_1"])).toEqual({ what: "circle", radius: 1 });
-    expect(readValue(created, ["outlines", "logo", 0])).toEqual({ what: "rectangle", size: [5, 5] });
+    expect(named.part).toBe("circle_1");
+    expect(readValue(named.config, ["outlines", "holes", "circle_1"])).toEqual({ what: "circle", radius: 1 });
+    expect(created.part).toBe("0");
+    expect(readValue(created.config, ["outlines", "logo", 0])).toEqual({ what: "rectangle", size: [5, 5] });
   });
 
   it("deletes a part", () => {

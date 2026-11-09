@@ -52,12 +52,27 @@ export interface OutlineShapes {
   parts: PlacedPart[];
 }
 
+/**
+ * Something to draw faintly behind the outlines for orientation, such as a keyboard's keys: a
+ * rectangle centered on (x, y), rotated `r` degrees counter-clockwise, in engine coordinates.
+ */
+export interface Reference {
+  name: string;
+  x: number;
+  y: number;
+  r: number;
+  width: number;
+  height: number;
+}
+
 export type EngineResult =
   | {
       ok: true;
       files: EngineFile[];
       /** Per outline name: its parts and where they are. Empty for engines that can't say. */
       shapes: Record<string, OutlineShapes>;
+      /** Marks to draw behind the outlines (for Ergogen: the keys). */
+      references: Reference[];
       log: string[];
     }
   | { ok: false; error: string; log: string[] };

@@ -87,7 +87,8 @@ npm run kit:update   # pull the newest compatible @toyonix/web-kit
 
 <!-- Keep this current: it's what agents read first. -->
 
-- **Purpose:** design objects from a YAML config and shape them with the mouse. The YAML is the
+- **Purpose:** make objects in the browser and download their files, shaping them with the mouse
+  or by writing their config. The YAML is the
   source of truth; a ready-made shape palette and a drawing-program-style canvas (select, move,
   resize, round all or single corners, right-click menu) edit that YAML for you.
 - **Users:** the owner first; anyone who finds hand-tuning shape numbers in YAML slow.

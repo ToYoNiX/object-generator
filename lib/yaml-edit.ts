@@ -1,4 +1,4 @@
-import { isScalar, parseDocument, type Document } from "yaml";
+import { isNode, isScalar, parseDocument, type Document } from "yaml";
 
 /**
  * Edits to the user's YAML that keep their file as they wrote it.
@@ -37,6 +37,19 @@ export function readValue(text: string, path: YamlPath): unknown {
     value = (value as Record<string | number, unknown>)[key];
   }
   return value;
+}
+
+/**
+ * Where the value at `path` is in the text (e.g. a part's whole block), for highlighting it in
+ * the editor. Null if there's nothing there or the YAML doesn't parse.
+ */
+export function findRange(text: string, path: YamlPath): { from: number; to: number } | null {
+  const doc = parseDocument(text);
+  if (doc.errors.length > 0) return null;
+  const node = doc.getIn(path, true);
+  if (!isNode(node) || !node.range) return null;
+  const [from, valueEnd] = node.range;
+  return { from, to: valueEnd };
 }
 
 /** Sets the value at `path`: in place if it already exists as a plain value, otherwise added. */

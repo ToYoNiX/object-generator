@@ -27,7 +27,7 @@ type Point = { x: number; y: number };
 const NEARLY_ZERO = 1e-9;
 
 /** Where a part lives in the YAML: list parts by index, named parts by name. */
-function partPath(text: string, ref: PartRef): YamlPath {
+export function partPath(text: string, ref: PartRef): YamlPath {
   const parts = readValue(text, ["outlines", ref.outline]);
   return ["outlines", ref.outline, Array.isArray(parts) ? Number(ref.part) : ref.part];
 }
@@ -52,7 +52,7 @@ export function offsetValue(value: unknown, delta: number): number | string {
 }
 
 /** A new node for `value`, with lists written inline (`[1, 2]`), as in Ergogen configs. */
-function inlineNode(doc: Document, value: unknown) {
+export function inlineNode(doc: Document, value: unknown) {
   const node = doc.createNode(value);
   visit(node, {
     Seq(_, seq) {
@@ -104,17 +104,12 @@ export function moveShape(text: string, ref: PartRef, delta: Point, frame: Place
 }
 
 /**
- * Grows or shrinks a part by `delta` (width, height). Rectangles change `size`; circles change
- * `radius` by half the width. Parts placed from their center grow both ways: to keep one edge
- * still, also move the part by half the change.
+ * Grows or shrinks a rectangle by `delta` (width, height), changing its `size`. Rectangles are
+ * placed from their center and grow both ways: to keep one edge still, also move the part by
+ * half the change.
  */
 export function resizeShape(text: string, ref: PartRef, delta: { width: number; height: number }): string {
   const path = partPath(text, ref);
-  if (readValue(text, [...path, "what"]) === "circle") {
-    if (Math.abs(delta.width) < NEARLY_ZERO) return text;
-    const radius = readValue(text, [...path, "radius"]);
-    return setScalar(text, [...path, "radius"], offsetValue(radius, delta.width / 2));
-  }
   const size = readValue(text, [...path, "size"]);
   if (size === undefined) return text;
   if (!Array.isArray(size) && Math.abs(delta.width - delta.height) < NEARLY_ZERO) {
@@ -134,11 +129,25 @@ export function setCornerRadius(text: string, ref: PartRef, radius: number): str
 
 /**
  * Adds a part at the end of an outline: appended to a list of parts, or under a new name
- * (`circle_1`, …) in named parts. A missing outline is created as a list.
+ * (`circle_1`, …) in named parts. A missing outline is created as a list. Returns the new
+ * config and the new part's name, as the engine's shapes will call it.
  */
-export function addPart(text: string, outline: string, part: Record<string, unknown>): string {
+export function addPart(
+  text: string,
+  outline: string,
+  part: Record<string, unknown>,
+): { config: string; part: string } {
   const parts = readValue(text, ["outlines", outline]);
-  return updateDocument(text, (doc) => {
+  let name = "0";
+  if (Array.isArray(parts)) {
+    name = String(parts.length);
+  } else if (parts !== undefined) {
+    const prefix = typeof part.what === "string" ? part.what : "part";
+    let index = 1;
+    while ((parts as Record<string, unknown>)[`${prefix}_${index}`] !== undefined) index++;
+    name = `${prefix}_${index}`;
+  }
+  const config = updateDocument(text, (doc) => {
     const node = inlineNode(doc, part);
     if (parts === undefined) {
       const list = new YAMLSeq();
@@ -147,12 +156,10 @@ export function addPart(text: string, outline: string, part: Record<string, unkn
     } else if (Array.isArray(parts)) {
       doc.addIn(["outlines", outline], node);
     } else {
-      const prefix = typeof part.what === "string" ? part.what : "part";
-      let index = 1;
-      while ((parts as Record<string, unknown>)[`${prefix}_${index}`] !== undefined) index++;
-      doc.setIn(["outlines", outline, `${prefix}_${index}`], node);
+      doc.setIn(["outlines", outline, name], node);
     }
   });
+  return { config, part: name };
 }
 
 export function deletePart(text: string, ref: PartRef): string {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatNumber, readValue, setScalar, updateDocument } from "./yaml-edit";
+import { findRange, formatNumber, readValue, setScalar, updateDocument } from "./yaml-edit";
 
 const CONFIG = `# my keyboard
 outlines:
@@ -76,5 +76,24 @@ describe("updateDocument", () => {
   it("throws on a config it can't parse, instead of writing over it", () => {
     // Act / Assert
     expect(() => updateDocument("a: [1, 2\n", () => {})).toThrow();
+  });
+});
+
+describe("findRange", () => {
+  it("finds where a part's block is in the text, from its first key to its last value", () => {
+    // Act
+    const range = findRange(CONFIG, ["outlines", "board", 0]);
+
+    // Assert
+    expect(range).not.toBeNull();
+    const text = CONFIG.slice(range!.from, range!.to);
+    expect(text.startsWith("what: rectangle")).toBe(true);
+    expect(text.trimEnd().endsWith("size: [119, 100]")).toBe(true);
+  });
+
+  it("is null for a missing path or YAML that doesn't parse", () => {
+    // Act / Assert
+    expect(findRange(CONFIG, ["outlines", "nope"])).toBeNull();
+    expect(findRange("a: [1, 2\n", ["a"])).toBeNull();
   });
 });

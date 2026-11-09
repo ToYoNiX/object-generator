@@ -1,5 +1,5 @@
 import ergogen from "ergogen";
-import type { EngineFile, EngineResult, OutlineShapes } from "../types";
+import type { EngineFile, EngineResult, OutlineShapes, Reference } from "../types";
 
 /**
  * Runs Ergogen on a YAML config and flattens its nested results into a list of files.
@@ -16,13 +16,31 @@ export async function runErgogen(config: string): Promise<EngineResult> {
     const results = await ergogen.process(config, { debug: true, svg: true, shapes: true }, (message) =>
       log.push(message),
     );
-    return { ok: true, files: toFiles(results), shapes: toShapes(results), log };
+    return {
+      ok: true,
+      files: toFiles(results),
+      shapes: toShapes(results),
+      references: toReferences(results),
+      log,
+    };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : String(error), log };
   }
 }
 
 type Results = Awaited<ReturnType<typeof ergogen.process>>;
+
+/** The keys, to draw behind the outlines. Ergogen's default key is 18 × 18 mm. */
+function toReferences(results: Results): Reference[] {
+  return Object.entries(results.points ?? {}).map(([name, point]) => ({
+    name,
+    x: point.x,
+    y: point.y,
+    r: point.r,
+    width: point.meta.width ?? 18,
+    height: point.meta.height ?? 18,
+  }));
+}
 
 /** The fork reports each outline's extents; the canvas needs the size of its SVG drawing. */
 function toShapes(results: Results): Record<string, OutlineShapes> {
@@ -36,7 +54,11 @@ function toShapes(results: Results): Record<string, OutlineShapes> {
         ? { width: round(extents.high[0] - extents.low[0]), height: round(extents.high[1] - extents.low[1]) }
         : { width: 0, height: 0 },
       origin: extents ? { x: round(extents.low[0]), y: round(extents.high[1]) } : { x: 0, y: 0 },
-      parts: outline.parts,
+      // A part with nothing left to draw has no path data: an empty path is easier to handle.
+      parts: outline.parts.map((part) => ({
+        ...part,
+        placements: part.placements.map((placement) => ({ ...placement, path: placement.path ?? "" })),
+      })),
     };
   }
   return shapes;

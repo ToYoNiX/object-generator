@@ -7,6 +7,7 @@ import {
   ButtonRow,
   ChevronDownIcon,
   ChevronLeftIcon,
+  CircleIcon,
   CursorIcon,
   Dialog,
   DialogContent,
@@ -21,6 +22,9 @@ import {
   IconButton,
   Kbd,
   PanelLeftIcon,
+  PillIcon,
+  RectangleIcon,
+  RoundedRectangleIcon,
   PanelRightIcon,
   PlusIcon,
   SidePanel,
@@ -46,12 +50,21 @@ import {
 } from "@toyonix/web-kit/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FileList } from "@/components/FileList";
-import { OutlineCanvas } from "@/components/OutlineCanvas";
+import { OutlineCanvas, type CanvasEdits, type SelectedInfo } from "@/components/OutlineCanvas";
 import { Preview } from "@/components/Preview";
+import { ShapePanel } from "@/components/ShapePanel";
 import { YamlEditor } from "@/components/YamlEditor";
 import { ergogenEngine } from "@/engines/ergogen";
-import { movePart } from "@/engines/ergogen/edits";
-import { describePart, OPERATION_SYMBOLS } from "@/engines/ergogen/parts";
+import {
+  addPart,
+  movePart,
+  moveShape,
+  partPath,
+  resizeShape,
+  setCornerRadius,
+} from "@/engines/ergogen/edits";
+import { describePart, OPERATION_SYMBOLS, readPartFields, setPartField } from "@/engines/ergogen/parts";
+import { SHAPE_PRESETS, type ShapePreset } from "@/engines/ergogen/presets";
 import { useDraft } from "@/hooks/use-draft";
 import { useGeneration } from "@/hooks/use-generation";
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -61,8 +74,16 @@ import { isReplaceable, type Draft } from "@/lib/draft";
 import { readIntent } from "@/lib/intent";
 import type { PanelName } from "@/lib/panels";
 import { groupFiles, pickSelection } from "@/lib/files";
+import { findRange } from "@/lib/yaml-edit";
 
 const engine = ergogenEngine;
+
+const PRESET_ICONS: Record<ShapePreset["id"], React.ReactNode> = {
+  rectangle: <RectangleIcon />,
+  rounded: <RoundedRectangleIcon />,
+  circle: <CircleIcon />,
+  pill: <PillIcon />,
+};
 // A first visit starts a new object; examples are opened from the home page.
 const FALLBACK: Draft = { engine: engine.id, config: engine.starter };
 // Configs the app ships: replacing one of these unchanged loses nothing.
@@ -89,7 +110,10 @@ const NARROW = "(max-width: 760px)";
  */
 export function WorkspaceView() {
   const { draft, setConfig, setDraft, saveFailed } = useDraft(FALLBACK);
-  const { files, shapes, error, running, runNow } = useGeneration(engine.run, draft?.config ?? null);
+  const { files, shapes, references, error, revision, running, runNow, accept } = useGeneration(
+    engine.run,
+    draft?.config ?? null,
+  );
   const { panels, setPanel } = usePanels();
   const narrow = useMediaQuery(NARROW);
   // On a narrow screen the YAML wins if both were left open (e.g. on a wider screen).
@@ -108,9 +132,13 @@ export function WorkspaceView() {
   const outline = /^outlines\/(.+)\.svg$/.exec(selectedPath ?? "")?.[1] ?? null;
   const outlineShapes = outline ? shapes[outline] : undefined;
   const onCanvas = Boolean(outline && outlineShapes && selected);
-  const [selection, setSelection] = useState<{ outline: string; part: string } | null>(null);
+  // The selected part, and which of its placements (one per point it's on) was clicked.
+  const [selection, setSelection] = useState<{ outline: string; part: string; placement: number } | null>(
+    null,
+  );
   const selectedPart = selection && selection.outline === outline ? selection.part : null;
-  const selectPart = (part: string | null) => setSelection(part && outline ? { outline, part } : null);
+  const selectPart = (part: string | null, placement = 0) =>
+    setSelection(part && outline ? { outline, part, placement } : null);
   const [tool, setTool] = useState<"select" | "pan">("select");
   const [cursor, setCursor] = useState<CanvasPoint | null>(null);
   const canvas = useRef<CanvasApi>(null);
@@ -137,13 +165,92 @@ export function WorkspaceView() {
   }, [draft, outline, outlineShapes]);
 
   /** Applies a canvas edit to the YAML; a YAML that doesn't parse is left alone. */
-  const editConfig = (edit: (config: string) => string) => {
-    if (!draft) return;
+  // Every edit made with the mouse or the Shape panel is checked first: the engine runs on the
+  // edited YAML, and only if that works is the YAML changed. Otherwise nothing is written and the
+  // reason is shown (until the YAML changes).
+  const [editError, setEditError] = useState<{ on: string; message: string } | null>(null);
+  const configNow = useRef<string | null>(null);
+  useEffect(() => {
+    configNow.current = draft?.config ?? null;
+  });
+  const editConfig = async (edit: (config: string) => string): Promise<boolean> => {
+    const base = configNow.current;
+    if (base === null) return false;
+    let next: string;
     try {
-      setConfig(edit(draft.config));
+      next = edit(base);
     } catch {
-      // The YAML is invalid right now: the edit is dropped, the user's text is untouched.
+      setEditError({ on: base, message: "The YAML has an error right now. Fix it, then try again." });
+      return false;
     }
+    if (next === base) return false;
+    const result = await engine.run(next);
+    // The user typed while it was checked: don't write over what they typed.
+    if (configNow.current !== base) return false;
+    if (!result.ok) {
+      setEditError({ on: base, message: result.error });
+      return false;
+    }
+    setEditError(null);
+    setConfig(next);
+    accept(next, result);
+    return true;
+  };
+
+  // The selected part's fields, read from the YAML (null while it doesn't parse).
+  const fields = useMemo(() => {
+    if (!draft || !outline || !selectedPart) return null;
+    try {
+      return readPartFields(draft.config, { outline, part: selectedPart });
+    } catch {
+      return null;
+    }
+  }, [draft, outline, selectedPart]);
+  const selectedInfo: SelectedInfo | null = fields
+    ? { what: fields.what, corner: /^-?\d+(\.\d+)?$/.test(fields.corner) ? Number(fields.corner) : 0 }
+    : null;
+  // The selected part's lines in the YAML, highlighted in the editor (none while it doesn't parse).
+  const selectedRange = useMemo(() => {
+    if (!draft || !outline || !selectedPart) return null;
+    try {
+      return findRange(draft.config, partPath(draft.config, { outline, part: selectedPart }));
+    } catch {
+      return null;
+    }
+  }, [draft, outline, selectedPart]);
+  const layerLabel = layers.find((layer) => layer.id === selectedPart)?.label;
+  const selectedLabel = typeof layerLabel === "string" ? layerLabel : selectedPart;
+
+  const canvasEdits: CanvasEdits = {
+    move: (part, delta, frame) =>
+      editConfig((config) => moveShape(config, { outline: outline ?? "", part }, delta, frame)),
+    resize: (part, grow, move, frame, corner) =>
+      editConfig((config) => {
+        const ref = { outline: outline ?? "", part };
+        const resized = moveShape(resizeShape(config, ref, grow), ref, move, frame);
+        return corner === undefined ? resized : setCornerRadius(resized, ref, corner);
+      }),
+    corner: (part, radius) =>
+      editConfig((config) => setCornerRadius(config, { outline: outline ?? "", part }, radius)),
+  };
+
+  // New shapes go where the user is looking: the middle of the canvas.
+  const canvasArea = useRef<HTMLDivElement>(null);
+  const addShape = (preset: ShapePreset) => {
+    if (!draft || !outline) return;
+    const area = canvasArea.current?.getBoundingClientRect();
+    const world =
+      area && canvas.current
+        ? canvas.current.toWorld(area.left + area.width / 2, area.top + area.height / 2)
+        : { x: 0, y: 0 };
+    let added = "";
+    void editConfig((config) => {
+      const result = addPart(config, outline, preset.part({ x: world.x, y: -world.y }));
+      added = result.part;
+      return result.config;
+    }).then((applied) => {
+      if (applied) setSelection({ outline, part: added, placement: 0 });
+    });
   };
 
   useEffect(() => {
@@ -280,6 +387,27 @@ export function WorkspaceView() {
                 <FitIcon />
               </IconButton>
             </ToolbarButton>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <ToolbarButton variant="primary">
+                  <PlusIcon />
+                  Add shape
+                  <ChevronDownIcon />
+                </ToolbarButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-72">
+                {SHAPE_PRESETS.map((preset) => (
+                  <DropdownMenuItem
+                    key={preset.id}
+                    icon={PRESET_ICONS[preset.id]}
+                    description={`${preset.description}, into ${outline}`}
+                    onSelect={() => addShape(preset)}
+                  >
+                    {preset.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </>
         ) : null}
         <Spacer />
@@ -346,6 +474,8 @@ export function WorkspaceView() {
                 value={draft.config}
                 onChange={setConfig}
                 onRun={runNow}
+                highlight={selectedRange}
+                highlightKey={outline && selectedPart ? `${outline}/${selectedPart}` : null}
               />
             ) : (
               <p className="px-3.5 text-sm text-text-muted">Loading your draft…</p>
@@ -353,7 +483,12 @@ export function WorkspaceView() {
           </div>
         </SidePanel>
 
-        <WorkspaceMain aria-label="Output">
+        <WorkspaceMain aria-label="Output" ref={canvasArea}>
+          {editError && editError.on === draft?.config ? (
+            <Alert tone="warning" title="That change wasn't made" className="m-4 mb-0 max-h-48 overflow-auto">
+              <span className="font-mono text-sm whitespace-pre-wrap">{editError.message}</span>
+            </Alert>
+          ) : null}
           {error ? (
             <Alert tone="danger" title="Generation failed" className="m-4 mb-0 max-h-48 overflow-auto">
               <span className="font-mono text-sm whitespace-pre-wrap">{error}</span>
@@ -361,12 +496,18 @@ export function WorkspaceView() {
           ) : null}
           {onCanvas && outline && selected ? (
             <OutlineCanvas
+              key={outline}
               ref={canvas}
               name={outline}
+              references={references}
               svg={selected.content}
               shapes={outlineShapes}
+              revision={revision}
               selected={selectedPart}
+              selectedPlacement={selection?.placement ?? 0}
+              selectedInfo={selectedInfo}
               onSelect={selectPart}
+              edits={canvasEdits}
               tool={tool}
               onCursorMove={setCursor}
             />
@@ -384,11 +525,35 @@ export function WorkspaceView() {
           onOpenChange={(show) => showPanel("files", show)}
           shortcut={FILES_SHORTCUT}
         >
-          <Tabs defaultValue="layers" className="flex h-full flex-col">
+          <Tabs defaultValue="shape" className="flex h-full flex-col">
             <TabsList className="mx-3.5 mt-3">
+              <TabsTrigger value="shape">Shape</TabsTrigger>
               <TabsTrigger value="layers">Layers</TabsTrigger>
               <TabsTrigger value="files">Files</TabsTrigger>
             </TabsList>
+            <TabsContent value="shape" className="min-h-0 flex-1 overflow-auto px-3.5 pb-3">
+              {onCanvas && outline && selectedPart && fields ? (
+                <ShapePanel
+                  copies={
+                    outlineShapes?.parts.find((part) => part.name === selectedPart)?.placements.length ?? 1
+                  }
+                  key={`${outline}/${selectedPart}`}
+                  label={selectedLabel ?? selectedPart}
+                  fields={fields}
+                  onChange={(field, value) =>
+                    void editConfig((config) =>
+                      setPartField(config, { outline, part: selectedPart }, field, value),
+                    )
+                  }
+                />
+              ) : (
+                <p className="m-0 text-sm text-text-muted">
+                  {onCanvas
+                    ? "Select a part on the canvas or in Layers to edit it here."
+                    : "Open an outline to edit its parts."}
+                </p>
+              )}
+            </TabsContent>
             <TabsContent value="layers" className="min-h-0 flex-1 overflow-auto px-3.5 pb-3">
               {onCanvas && outline ? (
                 <div className="grid gap-2">
@@ -398,7 +563,7 @@ export function WorkspaceView() {
                     selected={selectedPart}
                     onSelect={selectPart}
                     onMove={(part, index) =>
-                      editConfig((config) => movePart(config, { outline, part }, index))
+                      void editConfig((config) => movePart(config, { outline, part }, index))
                     }
                   />
                   <p className="m-0 text-sm text-text-muted">

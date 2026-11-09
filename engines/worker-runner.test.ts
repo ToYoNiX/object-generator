@@ -37,6 +37,7 @@ const ok = (path: string): EngineResult => ({
   ok: true,
   files: [{ path, kind: "svg", content: "" }],
   shapes: {},
+  references: [],
   log: [],
 });
 

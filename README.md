@@ -1,6 +1,7 @@
 # Object Generator
 
-Design objects from a YAML config and shape them with the mouse. Served at
+Make objects in your browser: shape them with the mouse or write their config, then download the
+real files (outlines, PCBs and cases). Served at
 <https://toyonix.github.io/object-generator/>.
 
 Describing shapes in YAML is precise, but tuning them by editing numbers is slow. Object

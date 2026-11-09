@@ -12,7 +12,8 @@ declare module "ergogen" {
     y: number;
     r: number;
     mirrored: boolean;
-    path: string;
+    /** Undefined when nothing of the part is left to draw (makerjs gives no path data then). */
+    path: string | undefined;
   }
 
   interface ShapeOutline {
@@ -20,8 +21,17 @@ declare module "ergogen" {
     parts: { name: string; what: string; operation: string; placements: ShapePlacement[] }[];
   }
 
+  interface ErgogenPoint {
+    x: number;
+    y: number;
+    r: number;
+    meta: { width?: number; height?: number; [key: string]: unknown };
+  }
+
   interface ErgogenResults {
     demo?: TwoDee;
+    /** With `debug`: every point (key) by name. */
+    points?: Record<string, ErgogenPoint>;
     /** With the `shapes` option: where each outline part is placed. */
     shapes?: Record<string, ShapeOutline>;
     outlines?: Record<string, TwoDee>;
