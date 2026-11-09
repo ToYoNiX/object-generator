@@ -34,7 +34,7 @@
     "@lezer/highlight": "^1.2.5",
     "@toyonix/web-kit": "^0.1.6",
     "codemirror": "^6.0.2",
-    "ergogen": "https://codeload.github.com/ToYoNiX/ergogen-cli/tar.gz/ef5988debc19b7cea1729a8d4fa4949d9c9fd29d",
+    "ergogen": "https://codeload.github.com/ToYoNiX/ergogen-cli/tar.gz/9113e4949e23bb4204aab732d51899cc50aabe14",
     "jszip": "^3.10.2",
     "next": "^16.4.2",
     "react": "^19.3.1",

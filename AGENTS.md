@@ -124,8 +124,8 @@ keyboards can be added later.
   out. To pick up fork changes, `npm install ergogen@<tarball URL of the new sha>`. Fork
   changes this app needs (per-shape placement data, per-corner radii) go to
   `ToYoNiX/ergogen-cli` first.
-- The `shapes` option comes from fork PR ToYoNiX/ergogen-cli#4. Until it's merged, the app is
-  pinned to that PR's commit (`ef5988d`); once it's on `develop`, pin the merged commit.
+- The app needs the fork's `shapes` option (ToYoNiX/ergogen-cli#4, merged into `develop`). It's
+  pinned to `develop` at `9113e49`; pin a newer `develop` commit to pick up later fork changes.
 
 ### Storage
 
